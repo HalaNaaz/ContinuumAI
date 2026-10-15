@@ -27,7 +27,7 @@
 
 ---
 
-## Technology Stack
+## 💻 Technology Stack & Core Specifications
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />
@@ -62,8 +62,11 @@
 | **Containerization** | Docker, Docker Compose (v3.8) | Multi-service orchestration configuring FalkorDB, backend, and frontend containers |
 
 ---
+
 ## 📖 Table of Contents
 
+- [Technology Stack & Core Specifications](#-technology-stack--core-specifications)
+  - [Stack at a Glance](#stack-at-a-glance)
 - [Project Identity & Overview](#-project-identity--overview)
 - [Operational Problem & Solution](#-operational-problem--solution)
   - [The Operational Problem](#the-operational-problem)
