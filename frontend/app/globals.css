@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Oxanium:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Oxanium', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --color-bg: #111111;
+  --color-surface: #171717;
+  --color-surface-2: #1D1D1B;
+  --color-text: #F0EFEA;
+  --color-muted: #A6A49E;
+  --color-border: #383835;
+  --color-accent: #FF6A00;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Stencil and Editorial Headings */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* 21st.dev Editorial Grid Borders */
+.border-grid {
+  border-color: #383835;
+}
+
+.corner-marker {
+  position: relative;
+}
+
+.corner-marker::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  background-color: #FF6A00;
+}
+
+/* Signal Data-Flow & Agent Network Keyframe Animations */
+@keyframes particle-flow {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes node-pulse-halo {
+  0%, 100% {
+    box-shadow: 0 0 15px -3px rgba(255, 106, 0, 0.4);
+    border-color: rgba(255, 106, 0, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 30px -4px rgba(255, 106, 0, 0.7);
+    border-color: #FF6A00;
+  }
+}
+
+@keyframes node-materialize {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-particle-flow {
+  stroke-dasharray: 4, 8;
+  animation: particle-flow 1.2s linear infinite;
+}
+
+.animate-agent-active {
+  animation: node-pulse-halo 2s ease-in-out infinite;
+}
+
+.animate-materialize {
+  animation: node-materialize 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Accessibility: Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-particle-flow,
+  .animate-agent-active,
+  .animate-materialize {
+    animation: none !important;
+  }
+}
+
+/* React Flow customizations */
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__controls button {
+  background-color: #171717 !important;
+  border-color: #383835 !important;
+  fill: #F0EFEA !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: #1D1D1B !important;
+}
