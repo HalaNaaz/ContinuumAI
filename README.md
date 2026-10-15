@@ -1,19 +1,32 @@
-# ContinuumAI
+# ContinuumAI — Persistent Memory & Multi-Agent Coordination
 
-> **Persistent Knowledge Graph & Multi-Agent Coordination Layer**
+<p align="center">
+  <img src="https://img.shields.io/badge/CONTINUUMAI-Persistent_Memory-090A0C?style=for-the-badge&logoColor=white" alt="ContinuumAI" />
+  <img src="https://img.shields.io/badge/Status-Active_Prototype-F59E0B?style=for-the-badge" alt="Active Prototype" />
+  <img src="https://img.shields.io/badge/Tests-10_Passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="10 Tests Passed" />
+  <img src="https://img.shields.io/badge/Graph_Engine-FalkorDB-FF5722?style=for-the-badge" alt="FalkorDB Engine" />
+  <img src="https://img.shields.io/badge/Isolation-Workspace_Scoped-10B981?style=for-the-badge" alt="Workspace Scoped" />
+</p>
 
-[![Status](https://img.shields.io/badge/Status-Active_Development_%2F_Prototype-amber?style=flat-square)](https://github.com/Halanaaz1401/ContinuumAI)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![React Flow](https://img.shields.io/badge/React_Flow-@xyflow/react-FF0072?style=flat-square)](https://reactflow.dev/)
-[![FalkorDB](https://img.shields.io/badge/FalkorDB-Graph_Engine-FF5722?style=flat-square)](https://www.falkordb.com/)
+<p align="center">
+  <strong>Give AI agents continuity across sessions.</strong><br />
+  A graph-powered memory and coordination layer structuring agent experiences, operational findings, task states, and multi-agent handoffs into a persistent knowledge graph.
+</p>
 
-ContinuumAI is an open-source, graph-powered memory and coordination layer designed for multi-agent autonomous workflows. By structuring agent findings, operational decisions, tasks, and state transitions into a persistent knowledge graph, ContinuumAI ensures that AI agents retain historical context, execute reliable handoffs, and continue work seamlessly across separate execution sessions.
+<p align="center">
+  <a href="https://github.com/Halanaaz1401/ContinuumAI">📦 GitHub Repository</a> •
+  <a href="#-system-architecture">🏗️ Architecture</a> •
+  <a href="#-graph-data-model">🕸️ Graph Model</a> •
+  <a href="#-installation--quickstart">🚀 Quickstart</a> •
+  <a href="#-table-of-contents">📖 Documentation</a>
+</p>
+
+<p align="center">
+  <strong>Engineered by Hala Naaz</strong>
+</p>
 
 ---
+
 
 ## Table of Contents
 
