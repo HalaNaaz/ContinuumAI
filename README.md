@@ -903,50 +903,89 @@ In the spirit of open-source transparency, the following architectural details r
 
 ---
 
-## Roadmap
+## 🗺️ Development Roadmap
 
-- [ ] **Phase 1: Real-Time Graph Persistence**
-  - Bind `SessionService` and `TaskService` directly to FalkorDB `CREATE` and `MATCH` queries.
-  - Implement full Cypher-backed node and edge serialization in `get_workspace_graph()`.
-  - Introduce explicit visual badges on the frontend indicating real graph storage vs. fallback mode.
-- [ ] **Phase 2: First-Class Evidence & Decision Entities**
-  - Add `Evidence` and `Decision` nodes linked to `Task` and `Memory` via `SUPPORTS` and `BASED_ON` relationships.
-  - Expand the React Flow drawer to display cryptographic checksums and logs.
-- [ ] **Phase 3: Multi-Provider LLM Integration**
-  - Implement dynamic prompt synthesis feeding historical graph context into Gemini 1.5 Flash and OpenAI GPT-4o.
-  - Support automatic episodic memory extraction from raw multi-turn agent conversations.
-- [ ] **Phase 4: Advanced GraphRAG & Hybrid Search**
-  - Introduce vector embeddings alongside graph topologies for semantic similarity search over stored episodic memories.
+ContinuumAI is actively maintained with a focused roadmap toward enterprise-grade agent persistence and hybrid graph-vector retrieval:
 
----
+### 📍 Phase 1: Complete Graph Dual-Write & Serialization *(Current Priority)*
+- [ ] **Dual-Write Session & Task Graph Binding**: Bind `SessionService` and `TaskService` directly to `CREATE_SESSION` and `CREATE_TASK` Cypher statements.
+- [ ] **Native Graph Serialization**: Wire `GET_WORKSPACE_GRAPH` into `FalkorDBRepository.get_workspace_graph()` to replace in-memory dictionary serialization with live Cypher graph traversals.
+- [ ] **Storage Mode Frontend Indicator**: Add visual badges (`FalkorDB Live` vs. `In-Memory Fallback`) to the top navigation bar and graph canvas.
+- [ ] **Restart Persistence Verification**: Expand `test_falkordb_integration.py` to assert data survival across simulated process recycles.
 
-## Security & Configuration
+### 📍 Phase 2: First-Class Evidence & Decision Entities
+- [ ] **Decision Entity Nodes**: Introduce `Decision` property graph nodes capturing chosen architectural approaches and alternative options evaluated.
+- [ ] **Evidence & Telemetry Nodes**: Add `Evidence` nodes storing raw log snippets, HTTP traces, or metric snapshots linked via `[:SUPPORTS]` edges.
+- [ ] **Deep Provenance Drawer**: Expand the React Flow canvas drawer to display supporting evidence payloads with cryptographic SHA-256 hashes.
 
-* **Credential Management:** Never commit `.env` or any file containing passwords or API keys. Verify that `.env` is listed in `.gitignore`.
-* **Tenant Isolation:** All graph operations must explicitly supply `workspace_id`. Cross-tenant queries are blocked at both the API route and Cypher query levels.
-* **Cypher Injection Mitigation:** All Cypher operations must use parameterized queries (`$parameter_name`) with dictionary parameters. Raw string formatting or concatenation in Cypher statements is strictly prohibited.
+### 📍 Phase 3: Autonomous LLM Integration & Ingestion
+- [ ] **Dynamic Multi-Provider Prompt Synthesis**: Connect the memory retrieval layer to live model adapters (`gemini-1.5-flash`, `gpt-4o`) via LangChain / Google GenAI SDK.
+- [ ] **Autonomous Memory Extraction**: Automatically extract episodic, semantic, and procedural knowledge from unstructured agent conversation turns.
+- [ ] **Dynamic Cross-Session Task Resumption**: Allow continuation agents to formulate follow-up hypotheses based on graph-retrieved memories.
 
----
-
-## Contributing
-
-Contributions to ContinuumAI are welcome! Please follow these guidelines:
-
-1. Fork the repository and create a feature branch (`git checkout -b feature/amazing-feature`).
-2. Adhere to strict type hints in Python (`typing`, Pydantic models) and TypeScript.
-3. Ensure all backend tests pass before opening a Pull Request (`pytest backend/tests`).
-4. Keep Cypher queries strictly parameterized and documented in `queries.py`.
-5. Open a Pull Request with a clear description of the problem solved.
+### 📍 Phase 4: Hybrid GraphRAG & Vector Similarity Search
+- [ ] **Vector-Indexed Property Graph**: Store dense vector embeddings directly on `Memory` nodes within FalkorDB.
+- [ ] **Hybrid Search Pipelines**: Combine topological Cypher traversals (`[:HAS_MEMORY]`, `[:RELATES_TO]`) with cosine similarity scoring for semantic recall.
+- [ ] **Cross-Workspace Knowledge Federation**: Controlled read-only sharing of generalized procedural memories across sanitized organizational workspaces.
 
 ---
 
-## License
+## 🔒 Security, Privacy & Safe Operation
 
-Licensing has not yet been specified for this project. All rights are currently reserved by the maintainer. An open-source license (such as Apache 2.0 or MIT) will be designated in a future release.
+ContinuumAI is built with security and tenant boundary enforcement at its foundation:
+
+* **Strict Multi-Tenant Scoping**: Every API request and database query requires an explicit `workspace_id`. All Cypher statements enforce `$workspace_id` parameters, ensuring complete cryptographic separation of tenant graphs.
+* **Cypher Injection Defenses**: All database interactions use strictly parameterized openCypher statements via `CypherQueries` and dictionary bindings. Raw string concatenation or f-string formatting in Cypher execution is prohibited and blocked by repository design.
+* **Environment Credential Hygiene**: Database passwords, auth tokens, and API keys are loaded strictly via Pydantic Settings from `.env`. The `.env` file is excluded in `.gitignore`.
+* **Zero Client Exposure of Secrets**: Only environment variables prefixed with `NEXT_PUBLIC_` are bundled into client-side JavaScript. All database connection credentials and model API keys remain isolated within the FastAPI server environment.
+* **Non-Destructive Workspace Resets**: Workspace reset routines (`POST /api/workspaces/reset`) strictly scope deletions to `MATCH (n {workspace_id: $workspace_id}) DETACH DELETE n`, ensuring adjacent tenant data cannot be modified.
 
 ---
 
-## Maintainer
+## 🤝 Contributing Guidelines
 
-Maintained and developed by **[@Halanaaz1401](https://github.com/Halanaaz1401)**.  
-Repository: [https://github.com/Halanaaz1401/ContinuumAI](https://github.com/Halanaaz1401/ContinuumAI)
+We welcome community contributions, bug reports, and architectural proposals! To contribute to ContinuumAI:
+
+1. **Fork the Repository**: Create your own fork on GitHub: [https://github.com/Halanaaz1401/ContinuumAI](https://github.com/Halanaaz1401/ContinuumAI).
+2. **Create a Feature Branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Adhere to Code Standards**:
+   * **Backend**: Strict PEP 8 standards, comprehensive type annotations (`typing`), and Pydantic validation schemas.
+   * **Frontend**: TypeScript strict mode (`tsc --noEmit`), Tailwind CSS tokens defined in `tailwind.config.ts`, and component modularity.
+   * **Graph Queries**: All Cypher statements must be parameterized and added to `backend/app/graph/queries.py`.
+4. **Run the Test Suite**: Ensure all unit and integration tests pass cleanly:
+   ```bash
+   pytest -v backend/tests
+   cd frontend && npm run type-check
+   ```
+5. **Submit a Pull Request**: Provide a descriptive summary of your changes, reference any related issues, and document any new environment variables or Cypher queries introduced.
+
+---
+
+## 📜 License
+
+Licensing has not yet been specified for this project. All rights are currently reserved by the author and maintainer. An open-source license (such as Apache 2.0 or MIT) will be designated in a future release.
+
+---
+
+## 👤 Author & Maintainer
+
+<div align="center">
+
+**ContinuumAI** is designed, maintained, and actively developed by:
+
+### **[Halanaaz](https://github.com/Halanaaz1401)**
+*Open-Source Maintainer & AI Systems Architect*
+
+[![GitHub Profile](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Halanaaz1401)
+[![ContinuumAI Repository](https://img.shields.io/badge/Repository-ContinuumAI-3b82f6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Halanaaz1401/ContinuumAI)
+
+<br/>
+
+*If you find ContinuumAI valuable for your multi-agent architecture, consider starring the repository!*
+
+⭐ **[Star ContinuumAI on GitHub](https://github.com/Halanaaz1401/ContinuumAI)** ⭐
+
+</div>
