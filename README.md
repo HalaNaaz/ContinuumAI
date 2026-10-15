@@ -27,7 +27,41 @@
 
 ---
 
+## Technology Stack
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/FalkorDB-1.0+-FF5722?style=for-the-badge" alt="FalkorDB" />
+  <img src="https://img.shields.io/badge/Redis_Protocol-v8+-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis Protocol" />
+  <img src="https://img.shields.io/badge/Next.js-14.2-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 14" />
+  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 18" />
+  <img src="https://img.shields.io/badge/TypeScript-5.4-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/React_Flow-@xyflow/react-FF0072?style=for-the-badge" alt="React Flow" />
+  <img src="https://img.shields.io/badge/Pydantic-v2.6-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic v2" />
+  <img src="https://img.shields.io/badge/Uvicorn-ASGI-499848?style=for-the-badge" alt="Uvicorn" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Compose" />
+  <img src="https://img.shields.io/badge/Pytest-8.0+-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="Pytest" />
+  <img src="https://img.shields.io/badge/Lucide-React_Icons-F56565?style=for-the-badge" alt="Lucide React" />
+</p>
+
+### Stack at a Glance
+
+| Architectural Layer | Core Technologies | Primary Operational Purpose |
+| :--- | :--- | :--- |
+| **Frontend Framework** | Next.js 14.2 (App Router), React 18.3, TypeScript 5.4 | Server & client UI rendering, typed REST consumers, responsive workspace shells |
+| **Graph Observability** | React Flow (`@xyflow/react` v12), Lucide React | Interactive node-and-edge visualizer mapping real-time agent memory networks |
+| **Design & UI System** | Tailwind CSS 3.4, PostCSS, IBM Plex Mono & Oxanium | Technical stencil-grid aesthetic, high-contrast dark theme, accessible status badges |
+| **Backend API Engine** | Python 3.11+, FastAPI 0.110+, Uvicorn (ASGI) | High-throughput async REST endpoints, request validation, dependency singletons |
+| **Data Modeling & Validation** | Pydantic v2.6, Pydantic Settings | Strict schema enforcement for memory nodes, handoffs, sessions, and environment config |
+| **Primary Graph Database** | FalkorDB (via official `falkordb` Python client) | Low-latency graph engine executing parameterized openCypher statements |
+| **Protocol Transport** | Redis Protocol (`redis-py` v8+) | High-performance wire protocol connecting FastAPI services to FalkorDB |
+| **Memory Fallback Store** | In-Memory Python State Dictionaries | Resilient fallback ensuring unit tests and offline demos execute without a live DB |
+| **Testing & Quality Assurance** | Pytest 8.0+, pytest-asyncio, HTTPX, TypeScript `tsc` | Automated test runner verifying workspace isolation, dependency singletons, and route contracts |
+| **Containerization** | Docker, Docker Compose (v3.8) | Multi-service orchestration configuring FalkorDB, backend, and frontend containers |
+
+---
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
@@ -284,23 +318,6 @@ RETURN newMem.id AS source, prior.id AS target;
 
 ---
 
-## Technology Stack
-
-| Layer | Technology | Version | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Backend API** | [FastAPI](https://fastapi.tiangolo.com/) | `>=0.110.0` | Asynchronous REST API framework and route validation. |
-| **Web Server** | [Uvicorn](https://www.uvicorn.org/) | `>=0.28.0` | ASGI server running FastAPI application processes. |
-| **Data Validation** | [Pydantic v2](https://docs.pydantic.dev/) | `>=2.6.0` | Strict data modeling and configuration management via `pydantic-settings`. |
-| **Graph Database** | [FalkorDB](https://www.falkordb.com/) | Client `>=1.0.8` | Primary low-latency graph database engine supporting openCypher. |
-| **Database Driver** | [redis-py](https://github.com/redis/redis-py) | `>=8.0.0` | Redis protocol transport layer used by the FalkorDB client. |
-| **Testing** | [Pytest](https://pytest.org/) | `>=8.0.0` | Unit, route integration, and asynchronous test runner. |
-| **Frontend App** | [Next.js](https://nextjs.org/) | `14.2.15` | React 18 App Router framework for static and dynamic rendering. |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) | `^5.4.3` | Type safety across client components and API client libraries. |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) | `^3.4.1` | Utility-first CSS framework adhering to the design token system. |
-| **Graph Canvas** | [@xyflow/react](https://reactflow.dev/) | `^12.0.0` | Interactive node-and-edge visualizer rendering graph topology. |
-| **Icons** | [Lucide React](https://lucide.dev/) | `^0.363.0` | Iconography for navigation, status badges, and actions. |
-
----
 
 ## Repository Structure
 
