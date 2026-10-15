@@ -1,8 +1,12 @@
 # ContinuumAI — Persistent Memory & Multi-Agent Coordination
 
+> [!IMPORTANT]
+> **Project Status: Currently Under Active Development**  
+> ContinuumAI is actively being developed and refined. Core components, graph persistence capabilities, and agent coordination interfaces are in rapid active construction.
+
 <p align="center">
   <img src="https://img.shields.io/badge/CONTINUUMAI-Persistent_Memory-090A0C?style=for-the-badge&logoColor=white" alt="ContinuumAI" />
-  <img src="https://img.shields.io/badge/Status-Active_Prototype-F59E0B?style=for-the-badge" alt="Active Prototype" />
+  <img src="https://img.shields.io/badge/Status-Under_Development-F59E0B?style=for-the-badge" alt="Under Development" />
   <img src="https://img.shields.io/badge/Tests-10_Passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="10 Tests Passed" />
   <img src="https://img.shields.io/badge/Graph_Engine-FalkorDB-FF5722?style=for-the-badge" alt="FalkorDB Engine" />
   <img src="https://img.shields.io/badge/Isolation-Workspace_Scoped-10B981?style=for-the-badge" alt="Workspace Scoped" />
