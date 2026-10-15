@@ -326,35 +326,37 @@ sequenceDiagram
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture & Data Flow
+
+ContinuumAI is architected around a decoupled three-tier design: a typed Next.js 14 client, an asynchronous FastAPI service layer with centralized dependency singletons, and a dual-path graph persistence tier.
 
 ```mermaid
 flowchart TB
-    subgraph Client ["Frontend (Next.js 14 App Router + TypeScript)"]
-        UI_Landing["Landing Page (/)"]
+    subgraph Client ["Client Presentation Layer (Next.js 14 App Router + TypeScript)"]
+        UI_Landing["Public Landing Page (/)"]
         UI_Dash["Dashboard Shell (/app)"]
-        UI_Graph["Graph Canvas (@xyflow/react)"]
-        UI_Sessions["Session Inspector (/app/sessions)"]
-        UI_Agents["Activity Timeline (/app/agents)"]
-        UI_Memories["Memory Explorer (/app/memories)"]
+        UI_Graph["Interactive Graph Canvas (@xyflow/react)"]
+        UI_Sessions["Session Inspector & Handoff View (/app/sessions)"]
+        UI_Agents["Chronological Activity Timeline (/app/agents)"]
+        UI_Memories["Categorized Memory Explorer (/app/memories)"]
     end
 
-    subgraph Backend ["Backend API (FastAPI + Python 3.11+)"]
-        API_Router["REST API Layer (/api)"]
-        Deps["Dependency Singletons (deps.py)"]
-        Orchestrator["Agent Orchestration Engine"]
-        AgentA["Agent A (Investigator)"]
-        AgentB["Agent B (Continuation)"]
-        MemService["Memory Service"]
-        SessionService["Session Service"]
-        TaskService["Task Service"]
-        HandoffService["Handoff Service"]
-        Repo["FalkorDB Repository Layer"]
+    subgraph Backend ["Service & Orchestration Layer (FastAPI + Python 3.11+)"]
+        API_Router["Modular REST Router (/api)"]
+        Deps["Centralized Dependency Singletons (deps.py)"]
+        Orchestrator["Agent Orchestration Coordinator"]
+        AgentA["Agent A (Investigator / Producer)"]
+        AgentB["Agent B (Continuation / Consumer)"]
+        MemService["Memory Service (Episodic / Semantic / Procedural)"]
+        SessionService["Session Lifecycle Service"]
+        TaskService["Task State & Isolation Service"]
+        HandoffService["Structured Handoff Service"]
+        Repo["FalkorDB openCypher Repository Layer"]
     end
 
-    subgraph Storage ["Persistence Layer"]
-        FalkorDB[("FalkorDB Primary Graph Engine\n(Redis Protocol / Cypher)")]
-        Fallback["In-Memory State Fallback\n(Testing / Offline Execution)"]
+    subgraph Storage ["Data & Persistence Tier"]
+        FalkorDB[("FalkorDB Primary Graph Engine\n(Redis Wire Protocol · Parameterized openCypher)")]
+        Fallback["In-Memory State Fallback\n(_in_memory_nodes · Unit Testing & Offline Mode)"]
     end
 
     Client -->|HTTP / JSON REST| API_Router
@@ -370,12 +372,18 @@ flowchart TB
     AgentA --> HandoffService
     AgentB --> MemService
     MemService --> Repo
-    SessionService -.-> Repo
-    TaskService -.-> Repo
+    SessionService -.->|Dual-Write in Dev| Repo
+    TaskService -.->|Dual-Write in Dev| Repo
     HandoffService --> Repo
-    Repo -->|Parameterized Cypher| FalkorDB
-    Repo -.->|Offline Fallback| Fallback
+    Repo -->|Live Cypher Execution| FalkorDB
+    Repo -.->|Offline / Disconnected Fallback| Fallback
 ```
+
+### Architectural Subsystems
+
+1. **Client Presentation Tier (Next.js 14)**: Built with React 18 and Tailwind CSS, featuring an interactive `@xyflow/react` graph canvas rendering real-time nodes and edges. The client communicates exclusively through standard JSON REST endpoints without executing Cypher directly.
+2. **Service & Orchestration Tier (FastAPI)**: Routes requests through `deps.py` dependency singletons, guaranteeing shared state across endpoints. The orchestrator coordinates deterministic or live agent workflows across separate sessions.
+3. **Persistence Tier (FalkorDB & Fallback)**: The graph repository translates domain events into parameterized Cypher statements. If a live database connection is unavailable, it gracefully routes into an in-memory dictionary store, allowing local test suites to execute reliably.
 
 ---
 
