@@ -387,45 +387,76 @@ flowchart TB
 
 ---
 
-## Graph Data Model
+## 🕸️ Graph Data Model & Node Entities
 
-The ContinuumAI schema models agent state and workflows as first-class graph entities:
+ContinuumAI models multi-agent state, telemetry, and workflow provenance as a connected property graph. Rather than treating agent turns as flat text logs, discrete entities are maintained as strongly typed nodes connected by directed, semantic edges:
 
 ```text
- (Workspace) ──[:HAS_AGENT]──► (Agent)
-     │                           │
-     ├──[:HAS_SESSION]──► (Session) ◄──[:PARTICIPATED_IN]──┘
-     │                      │
-     │                      ├──[:RECORDED]──► (Memory) ◄──[:CREATED]── (Agent)
-     │                      │                   ▲
-     │                      │                   │ [:RELATES_TO]
-     │                      │                   │
-     │                      ├──[:RECORDED]──► (Memory)
-     │                      │
-     │                      └──[:RECORDED]──► (Handoff)
-     │                                          ▲
-     └──[:HAS_TASK]─────► (Task) ───────────────┼──[:HAS_HANDOFF]
-                            │                   │
-                            └──[:HAS_MEMORY]────┘
+       ┌────────────────┐
+       │   Workspace    │
+       └───┬────┬────┬──┘
+           │    │    │
+           │    │    └────────[:HAS_TASK]────────┐
+           │    │                                │
+  [:HAS_AGENT] [:HAS_SESSION]                    ▼
+           │    │                           ┌─────────┐
+           │    │      ┌───[:HAS_MEMORY]────┤  Task   │
+           ▼    ▼      │                    └───┬─────┘
+       ┌───────────┐   │                        │
+       │   Agent   │   │                 [:HAS_HANDOFF]
+       └─────┬─────┘   │                        │
+             │         │                        ▼
+      [:PARTICIPATED_IN]                      ┌─────────┐
+             │         │                      │ Handoff │
+             ▼         │                      └────▲────┘
+       ┌───────────┐   │                           │
+       │  Session  │   │                     [:RECORDED]
+       └─────┬─────┘   │                           │
+             │         ▼                           │
+        [:RECORDED]►┌────────┐                     │
+             │      │ Memory │◄────[:CREATED]──────┘ (Agent)
+             │      └───▲────┘
+             │          │ [:RELATES_TO {relationship: 'continues_investigation'}]
+             └──────────┴──────────────────────────┘
 ```
 
-### Entity Nodes
+### Graph Node Entities
 
-* **`Workspace`**: Represents an isolated tenant environment (`id`, `name`, `created_at`).
-* **`Agent`**: Autonomous agent identity (`id`, `role`, `status`, `workspace_id`).
-* **`Session`**: Bounded execution instance (`id`, `workspace_id`, `status`, `started_at`, `ended_at`).
-* **`Task`**: Unit of work being investigated or resolved (`id`, `workspace_id`, `title`, `context`, `status`).
-* **`Memory`**: Discrete knowledge finding (`id`, `workspace_id`, `memory_type`, `content`, `summary`, `status`, `created_at`).
-* **`Handoff`**: Formal transition record between agents (`id`, `workspace_id`, `summary`, `next_action`, `created_at`).
-* **`Decision` & `Evidence`**: *Planned for future iterations to represent supporting telemetry and architectural choices.*
+| Entity Label | Node ID Format | Key Properties | Role & Persistence Status |
+| :--- | :--- | :--- | :--- |
+| **`Workspace`** | `ws:{workspace_id}` | `id`, `name`, `created_at` | Top-level tenant container ensuring multi-tenant isolation. **Implemented & Verified** in both FalkorDB (`MERGE_WORKSPACE`) and in-memory store. |
+| **`Agent`** | `agent_{role}` | `id`, `role`, `status`, `workspace_id` | Autonomous agent identity representing producers (investigators) and consumers (continuators). **Implemented in Memory Service**; Cypher query `MERGE_AGENT` defined. |
+| **`Session`** | `session_{uuid}` | `id`, `workspace_id`, `status`, `started_at`, `ended_at` | Bounded execution turn tracking agent activity duration and state. **Managed by SessionService**; Cypher query `CREATE_SESSION` defined. |
+| **`Task`** | `task_{uuid}` | `id`, `workspace_id`, `title`, `context`, `status`, `created_at` | Unit of work or incident ticket being investigated. **Managed by TaskService**; Cypher query `CREATE_TASK` defined. |
+| **`Memory`** | `mem_{uuid}` | `id`, `workspace_id`, `memory_type`, `content`, `summary`, `source_agent_id`, `source_session_id`, `task_id`, `status`, `created_at` | Core knowledge atom (`episodic`, `semantic`, or `procedural`). **Fully Implemented** in FalkorDB (`CREATE_MEMORY`) and in-memory repository. |
+| **`Handoff`** | `handoff_{uuid}` | `id`, `workspace_id`, `source_agent_id`, `session_id`, `task_id`, `summary`, `next_action`, `created_at` | Structured coordination contract passing context to subsequent sessions. **Fully Implemented** in FalkorDB (`CREATE_HANDOFF`) and in-memory repository. |
+| **`Decision`** | *Planned* | `id`, `workspace_id`, `rationale`, `selected_action`, `timestamp` | *Roadmap Entity*: Structured architectural or remediation choice made by an agent. |
+| **`Evidence`** | *Planned* | `id`, `workspace_id`, `payload`, `mime_type`, `source_url` | *Roadmap Entity*: Raw log snippet, stack trace, or metric payload supporting a memory. |
 
 ---
 
-## Graph Relationships & Cypher Queries
+### Graph Relationship Edges
 
-All graph queries are defined in `backend/app/graph/queries.py` and utilize strictly parameterized Cypher statements:
+| Relationship Type | Source Node | Target Node | Cardinality | Semantics & Provenance Role |
+| :--- | :--- | :--- | :--- | :--- |
+| **`[:HAS_AGENT]`** | `Workspace` | `Agent` | `1 : N` | Binds autonomous agents to a specific workspace tenant. |
+| **`[:HAS_SESSION]`** | `Workspace` | `Session` | `1 : N` | Tracks all execution sessions launched within a workspace. |
+| **`[:PARTICIPATED_IN]`** | `Agent` | `Session` | `1 : N` | Maps which agent was active during a bounded session. |
+| **`[:HAS_TASK]`** | `Workspace` | `Task` | `1 : N` | Scopes tasks and incident investigations to the workspace. |
+| **`[:HAS_MEMORY]`** | `Task` | `Memory` | `1 : N` | Connects findings and observations directly to the incident being solved. |
+| **`[:CREATED]`** | `Agent` | `Memory` | `1 : N` | Establishes authorial provenance for every recorded memory atom. |
+| **`[:RECORDED]`** | `Session` | `Memory` | `1 : N` | Identifies the exact session in which a memory was generated. |
+| **`[:HAS_HANDOFF]`** | `Task` | `Handoff` | `1 : N` | Attaches formal handoff transitions to the originating task. |
+| **`[:RECORDED]`** | `Session` | `Handoff` | `1 : N` | Tracks which session produced the handoff contract. |
+| **`[:RELATES_TO]`** | `Memory` | `Memory` | `N : M` | Directional knowledge link connecting a new finding to a prior insight with property `{relationship: 'continues_investigation'}`. |
 
-### 1. Schema Indexes
+---
+
+## ⚡ Verified Cypher Queries & Relationships
+
+All graph interactions are centralized in `backend/app/graph/queries.py` and executed via `backend/app/graph/repository.py` using strictly parameterized openCypher statements:
+
+### 1. Schema Constraints & Performance Indexes
 ```cypher
 CREATE INDEX FOR (w:Workspace) ON (w.id);
 CREATE INDEX FOR (m:Memory) ON (m.id);
@@ -434,7 +465,14 @@ CREATE INDEX FOR (s:Session) ON (s.id);
 CREATE INDEX FOR (a:Agent) ON (a.id);
 ```
 
-### 2. Creating a Provenance-Linked Memory
+### 2. Workspace Provisioning & Multi-Tenant Scoping
+```cypher
+MERGE (w:Workspace {id: $workspace_id})
+ON CREATE SET w.name = $name, w.created_at = $created_at
+RETURN w.id AS id, w.name AS name;
+```
+
+### 3. Provenance-Linked Memory Ingestion
 ```cypher
 MATCH (w:Workspace {id: $workspace_id})
 MATCH (a:Agent {id: $agent_id})
@@ -457,7 +495,7 @@ CREATE (t)-[:HAS_MEMORY]->(m)
 RETURN m.id AS id;
 ```
 
-### 3. Task Context Retrieval Across Sessions
+### 4. Cross-Session Task Context Retrieval
 ```cypher
 MATCH (w:Workspace {id: $workspace_id})-[:HAS_TASK]->(t:Task {id: $task_id})
 MATCH (t)-[:HAS_MEMORY]->(m:Memory {status: 'active'})
@@ -472,13 +510,42 @@ RETURN m.id AS id,
 ORDER BY m.created_at ASC;
 ```
 
-### 4. Linking Knowledge Continuation
+### 5. Semantic Memory Continuation Linking
 ```cypher
 MATCH (prior:Memory {id: $prior_memory_id})
 MATCH (newMem:Memory {id: $new_memory_id})
 CREATE (newMem)-[:RELATES_TO {relationship: 'continues_investigation'}]->(prior)
 RETURN newMem.id AS source, prior.id AS target;
 ```
+
+### 6. Formal Agent Handoff Contract Creation
+```cypher
+MATCH (src:Agent {id: $source_agent_id})
+MATCH (s:Session {id: $session_id})
+MATCH (t:Task {id: $task_id})
+CREATE (h:Handoff {
+    id: $handoff_id,
+    workspace_id: $workspace_id,
+    summary: $summary,
+    next_action: $next_action,
+    created_at: $created_at
+})
+CREATE (s)-[:RECORDED]->(h)
+CREATE (t)-[:HAS_HANDOFF]->(h)
+RETURN h.id AS id;
+```
+
+### 7. Full Workspace Topology Query
+```cypher
+MATCH (n {workspace_id: $workspace_id})
+OPTIONAL MATCH (n)-[r]->(m {workspace_id: $workspace_id})
+RETURN n, r, m;
+```
+
+> [!IMPORTANT]
+> **Architectural Gotcha: Prerequisite Graph Nodes**
+> Notice that `CREATE_MEMORY` and `CREATE_HANDOFF` begin with multiple prerequisite `MATCH` clauses (`MATCH (w:Workspace)`, `MATCH (a:Agent)`, `MATCH (s:Session)`, `MATCH (t:Task)`). In openCypher semantics, if *any* of those matched nodes do not already exist in the graph database, the pattern match evaluates to zero rows, and the subsequent `CREATE` clause is never reached.
+> In the current codebase, `SessionService` and `TaskService` store state primarily in in-memory dictionaries. When running against live FalkorDB, ensure `MERGE_WORKSPACE`, `MERGE_AGENT`, `CREATE_SESSION`, and `CREATE_TASK` are invoked prior to recording memories, or utilize the repository's resilient in-memory fallback.
 
 ---
 
