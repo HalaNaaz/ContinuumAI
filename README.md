@@ -104,27 +104,55 @@
 ---
 
 
-## Problem Statement
+## 🎯 Project Identity & Overview
 
-Modern multi-agent AI architectures encounter persistent operational context loss:
+**ContinuumAI** is an open-source, high-performance graph memory and state coordination layer engineered to give autonomous AI agents persistent, cross-session continuity.
 
-1. **Session Discontinuity:** When an agent's execution session terminates, its conversational scratchpad and working memory vanish. Future sessions start cold from zero.
-2. **Redundant Investigations:** Agents duplicate expensive API calls, diagnostic routines, and database explorations because discoveries are not queryable across agent runs.
-3. **Fragmented Context:** Operational findings, system anomalies, and decisions are buried in unstructured conversational transcripts rather than linked domain entities.
-4. **Weak Handoffs:** Tasks transitioning from one agent role (e.g., Triage / Investigator) to another (e.g., Remediation / Developer) lack formal contracts, rationale, and clear next steps.
+In multi-agent environments, autonomous workflows break down because agents operate in ephemeral, stateless silos. ContinuumAI changes this paradigm by transforming transient conversational executions into an observable, persistent knowledge graph:
+
+1. **Persistent Operational Graph**: Replaces ephemeral flat conversation logs with structured graph entities (`Workspace`, `Agent`, `Session`, `Task`, `Memory`, `Handoff`).
+2. **Context-Aware Cross-Session Recovery**: When an agent session terminates, the next agent queries the graph to recover prior findings, architectural decisions, and diagnostic telemetry without redundant execution.
+3. **Formal Handoff Contracts**: Eliminates prompt-based handoff ambiguity by encapsulating the findings summary, affected entities, and explicit next actions into immutable handoff nodes.
+4. **Graph-Native Provenance**: Retains complete traceability for every memory, establishing exactly which agent authored the insight, in which session, for which task, and at what timestamp.
+5. **Multi-Tenant Workspace Isolation**: Strictly scopes all Cypher read and write operations by `workspace_id`, preventing cross-tenant context leakage across autonomous pipelines.
+
+---
+
+## ⚠️ Operational Problem & Solution
+
+### The Operational Problem
+
+Autonomous multi-agent systems and LLM pipelines face severe architectural challenges when coordinating on complex, multi-step tasks:
+
+* **Session Discontinuity & Amnesia**: When an agent completes its turn or an API process terminates, its working memory and context window disappear. Successive runs or downstream agents must restart investigations from ground zero.
+* **Redundant Diagnostic & API Loops**: Agents repeatedly make the same network requests, database scans, or log analyses because past discoveries are not indexed as queryable knowledge.
+* **Fragmented & Unstructured Context**: Important facts, system parameters, and intermediate decisions remain buried in flat text transcripts, making precision retrieval mathematically impossible for future sessions.
+* **Fragile & Unstructured Handoffs**: When an investigation transitions from a triage agent to an execution agent, instructions are passed as ambiguous natural language strings without structured parameters or verifiable state.
+* **Absence of Provenance & Auditability**: Teams cannot verify why an agent reached a conclusion or trace which prior session or evidence triggered a downstream automated action.
+
+### The ContinuumAI Solution
+
+ContinuumAI implements a closed-loop graph memory pipeline connecting transient agent sessions to persistent graph storage:
+
+```mermaid
+flowchart LR
+    A[Agent Session Execution\nDiagnostic · Investigation] --> B[Structured Fact Extraction\nEpisodic · Semantic · Procedural]
+    B --> C[FalkorDB Graph Persistence\nParameterized openCypher Nodes & Edges]
+    C --> D[Explicit Agent Handoff\nSummary · Structured Next Action]
+    D --> E[Subsequent Session Start\nAgent B Continuation]
+    E --> F[Graph Context Retrieval\nMATCH Task-Scoped Active Memories]
+    F --> G[Cross-Session Continuation\nLinked Resolution via RELATES_TO]
+```
+
+### Target Personas & Agent Roles
+
+* **Investigator / Producer Agent (Agent A)**: Receives fresh tasks, conducts initial investigation, records episodic findings into the graph, and crafts structured handoffs with concrete next actions.
+* **Continuation / Consumer Agent (Agent B)**: Initializes in independent, clean sessions, queries FalkorDB for active memories linked to the task, consumes prior findings, executes remediation, and links new semantic knowledge to prior nodes.
+* **Platform Engineers & AI System Architects**: Configure workspace boundaries, monitor persistent agent interactions, and audit cross-agent handoff contracts.
+* **Human-in-the-Loop Operators**: Inspect real-time React Flow visual topologies, review agent activity timelines, and trace memory provenance before approving automated remediations.
 
 ---
 
-## Proposed Solution
-
-ContinuumAI addresses these problems by decoupling agent memory from ephemeral sessions and storing it in a persistent, queryable knowledge graph powered by **FalkorDB**.
-
-* **Categorized Memory:** Structures memory into *Episodic* (actions and events), *Semantic* (facts and system discoveries), and *Procedural* (reusable strategies).
-* **Provenance Tracking:** Every memory record captures its authoring agent, originating session, associated task, and timestamps.
-* **Structured Handoff Contracts:** Explicit handoff entities formalize the state transfer between agents with summaries and concrete next actions.
-* **Graph Observability:** Real-time visual canvas powered by React Flow mapping relationships between workspaces, tasks, agents, sessions, and memories.
-
----
 
 ## Core Features & Status
 
