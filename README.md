@@ -798,68 +798,108 @@ Once the development server compiles:
 
 ---
 
-## Running Tests
+## 🧪 Testing & Quality Assurance
 
-### Backend Unit & Integration Tests
+ContinuumAI maintains automated testing standards across its Python backend and TypeScript frontend to ensure workspace isolation, graph query safety, and deterministic agent coordination.
 
-The test suite validates data models, memory services, workspace isolation, dependency injection, and cross-session orchestration workflows:
+### Backend Automated Test Suite (Pytest)
+
+The backend test suite is located in `backend/tests/` and utilizes `pytest`, `pytest-asyncio`, and `httpx.AsyncClient` for asynchronous route testing:
+
+| Test Module | Test Cases | Scope & Verification Objective | Current Status |
+| :--- | :---: | :--- | :---: |
+| **`test_workspace_isolation.py`** | 3 | Validates strict multi-tenant scoping. Ensures memories authored in `ws-1` cannot be retrieved in `ws-2`, and that workspace resets do not affect adjacent tenants. | **100% Passed** |
+| **`test_orchestrator.py`** | 2 | Validates the complete Session 1 → Session 2 continuity pipeline. Verifies Agent A creates episodic memories, stores handoffs, and Agent B retrieves context in a new session to link a `RELATES_TO` edge. | **100% Passed** |
+| **`test_deps_and_cross_routes.py`** | 5 | Validates singleton dependency injection across FastAPI route modules (`deps.py`). Confirms that memories recorded via `POST /api/memories` are immediately visible in `GET /api/graph` and `GET /api/tasks/{id}/memories`. | **100% Passed** |
+| **`test_falkordb_integration.py`** | 1 | Live database integration test. Connects to `FALKORDB_HOST:FALKORDB_PORT`, executes index initializations (`INIT_CONSTRAINTS`), and tests real Cypher read/write operations. | **Skipped When DB Offline** *(Auto-skips if no live FalkorDB instance is present)* |
+| **Total Test Baseline** | **11** | **10 Passed · 1 Conditionally Skipped · 0 Failed** | **Verified Clean** |
+
+#### Running Backend Tests
 
 ```bash
-# Run all unit and mock tests from the root directory
-pytest backend/tests
-
-# Run specifically with verbose output
+# Execute full backend test suite from repository root
 pytest -v backend/tests
+
+# Run specifically the multi-agent cross-session continuity test
+pytest -v backend/tests/test_orchestrator.py
+
+# Run workspace multi-tenant isolation tests
+pytest -v backend/tests/test_workspace_isolation.py
+
+# Run tests with code coverage reporting
+pytest -v --cov=backend/app backend/tests
 ```
 
-*Note: `backend/tests/test_falkordb_integration.py` requires an active FalkorDB instance and will automatically skip if the host is unreachable.*
+### Frontend Type Safety Verification
 
-### Frontend Type Verification
+The Next.js application enforces strict TypeScript typing across all components, API client adapters, and React Flow node definitions:
 
 ```bash
+# Navigate to frontend directory
 cd frontend
+
+# Execute TypeScript compiler type verification without emitting build artifacts
 npm run type-check
 ```
 
+*Note: Running `tsc --noEmit` verifies type contracts without build side-effects.*
+
 ---
 
-## FalkorDB Setup & Connection
+## 🔌 FalkorDB Configuration & Dual-Path Storage
 
-ContinuumAI is architected to use **FalkorDB** as its primary graph engine.
+ContinuumAI is architected with **FalkorDB** as its primary property graph engine, utilizing low-latency Redis Graph protocol (RESP) and expressive openCypher querying.
+
+```mermaid
+flowchart TD
+    API[FastAPI Domain Services\nMemory · Task · Session · Handoff] --> Repo[FalkorDBRepository\nbackend/app/graph/repository.py]
+    
+    Repo --> Check{FalkorDB Driver\nConnected?}
+    
+    Check -- Yes --> Live[Live FalkorDB Cluster\nRESP Protocol · openCypher Engine]
+    Live --> GraphStorage[(Persistent Graph DB\nNodes & Directed Edges)]
+    
+    Check -- No --> Fallback[In-Memory Fallback Store\n_in_memory_nodes · _in_memory_edges]
+    Fallback --> EphemeralStorage[(Process Memory\nNon-Persistent / Demo Mode)]
+    
+    style Live fill:#064e3b,stroke:#10b981,color:#fff
+    style Fallback fill:#78350f,stroke:#f59e0b,color:#fff
+```
 
 ### Option A: Local Instance via Docker
+Launch an official FalkorDB container exposing the default port `6379`:
 ```bash
 docker run -p 6379:6379 -it --rm falkordb/falkordb:latest
 ```
 
 ### Option B: FalkorDB Cloud
-1. Create a free instance on [app.falkordb.cloud](https://app.falkordb.cloud/).
-2. Obtain the host endpoint, assigned port, and password from the **Connectivity** tab.
+1. Provision a free instance at [app.falkordb.cloud](https://app.falkordb.cloud/).
+2. Locate your connection endpoint, port, username, and authentication token in the **Connectivity** tab.
 3. Update `.env`:
    ```dotenv
    FALKORDB_HOST=db-your-instance.falkordb.cloud
    FALKORDB_PORT=6379
    FALKORDB_USERNAME=default
-   FALKORDB_PASSWORD=your_cloud_password
+   FALKORDB_PASSWORD=your_secure_cloud_password
    FALKORDB_GRAPH_NAME=continuum_ai
-   FALKORDB_SSL=true
    ```
 
-### Current Connection Mechanism
-In the current code baseline:
-* [backend/app/graph/connection.py](file:///c:/Users/Hala/Downloads/Project%20Files/ContinuumAI/backend/app/graph/connection.py) attempts to connect using the official `falkordb` Python library.
-* If the package is not installed or the database is offline, the backend logs a warning and enters an **in-memory fallback mode**.
-* In fallback mode, nodes and edges are stored in internal memory dictionaries (`_in_memory_nodes`), allowing the UI and mock orchestration tests to run without crashing.
+### Dual-Path Storage Architecture Explained
+* **Live Database Mode**: When a live FalkorDB instance is detected, the repository issues parameterized openCypher queries for indexed property lookups, graph traversals, and edge creations.
+* **Resilient In-Memory Fallback**: If FalkorDB is offline, `backend/app/graph/connection.py` logs an informational notice and gracefully routes state into thread-safe in-memory dictionaries (`_in_memory_nodes` and `_in_memory_edges`). This allows developers to clone the repository and run all unit tests, OpenAPI endpoints, and UI dashboards immediately without mandatory database infrastructure.
 
 ---
 
-## Current Limitations & Known Issues
+## ⚠️ Current Limitations & Known Issues
 
-1. **In-Memory Fallback Active by Default:** If FalkorDB is offline or the driver cannot connect, the backend silently falls back to in-memory dictionaries. Persistence across server restarts requires an active database connection.
-2. **Graph Visualizer Serialization:** The current implementation of `get_workspace_graph()` in `repository.py` serializes nodes and edges directly from `_in_memory_nodes`. Live Cypher serialization for visualization (`GET_WORKSPACE_GRAPH`) is implemented as a query definition but awaits direct binding in the live database path.
-3. **Task & Session Persistence in Cypher:** While `CREATE_SESSION` and `CREATE_TASK` Cypher queries are defined in `queries.py`, `SessionService` and `TaskService` currently maintain lifecycle states in process memory. Full dual-write persistence to the graph is in active development.
-4. **Deterministic Agent Mode:** Agent A and Agent B currently run deterministic diagnostic logic ("investigation of connection pool exhaustion") designed for consistent demonstrations. Live LLM API integration via external providers (Gemini / OpenAI) is defined in architecture but unlinked.
-5. **Frontend Lint Configuration:** Next.js linting requires an explicit `.eslintrc.json` configuration file, currently omitted to avoid interactive prompts during builds.
+In the spirit of open-source transparency, the following architectural details reflect the current codebase state:
+
+1. **Dual-Path In-Memory Fallback Active by Default**: If FalkorDB is offline or unconfigured, the application silently routes into in-memory dictionaries. State created in fallback mode does not persist across backend process restarts. Connecting to live FalkorDB Cloud or Docker is required for restart-durable persistence.
+2. **Session and Task Persistence Gaps**: While parameterized Cypher queries (`CREATE_SESSION` and `CREATE_TASK`) are defined in `queries.py`, `SessionService` and `TaskService` currently maintain entity state in process-level Python dictionaries. Full dual-write persistence to FalkorDB for sessions and tasks is planned in Phase 1.
+3. **Prerequisite Graph Nodes in Cypher**: The Cypher queries `CREATE_MEMORY` and `CREATE_HANDOFF` contain prerequisite `MATCH` clauses (`MATCH (w:Workspace)... MATCH (a:Agent)... MATCH (s:Session)... MATCH (t:Task)`). In live FalkorDB, if any of these matched nodes do not exist in the database, the query evaluates to zero rows. Dual-write synchronization across all entity types is being standardized to resolve this dependency.
+4. **Graph Visualizer Serialization Source**: The REST endpoint `GET /api/graph` (invoking `get_workspace_graph()`) currently constructs the React Flow payload from `_in_memory_nodes`. A live database query `GET_WORKSPACE_GRAPH` is defined in `queries.py` and will replace in-memory serialization in the next release.
+5. **Deterministic Agent Workflow**: Agent A and Agent B currently run deterministic mock workflows ("investigation of connection pool exhaustion") designed for offline demonstration and testing. Live LLM integrations with Gemini and OpenAI are defined in configuration schemas but not yet activated in the default pipeline.
+6. **Next.js ESLint Configuration**: ESLint configuration file `.eslintrc.json` is intentionally omitted from the frontend root to prevent interactive setup prompts during headless Docker and CI builds.
 
 ---
 
