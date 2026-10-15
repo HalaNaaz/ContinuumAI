@@ -271,9 +271,9 @@ Dedicated graph query repository utilizing strictly parameterized Cypher stateme
 ---
 
 
-## Product Workflow
+## 🔄 Signature Workflow: Cross-Session Continuity
 
-The signature workflow demonstrates how two distinct agents preserve and consume knowledge across separate sessions:
+The primary coordination workflow demonstrates how two autonomous agents preserve, transfer, and consume knowledge across disconnected execution sessions:
 
 ```mermaid
 sequenceDiagram
@@ -284,31 +284,45 @@ sequenceDiagram
     participant Repo as Graph Repository
     participant DB as FalkorDB Engine
 
-    Note over User, DB: SESSION 1: Initial Investigation (Agent A)
-    User->>API: POST /api/tasks/{task_id}/run (Session 1, Investigator)
-    API->>Orch: Execute Task (Role: Investigator)
-    Orch->>Repo: retrieve_memories_for_task(task_id)
-    Repo-->>Orch: 0 prior memories found
-    Orch->>Orch: Agent A analyzes issue (Connection pool exhausted)
-    Orch->>Repo: create_memory(Episodic: "Pool limit 10/10 reached")
-    Repo->>DB: Cypher: CREATE (m:Memory) ...
-    Orch->>Repo: create_handoff("Increase max_connections to 50")
-    Repo->>DB: Cypher: CREATE (h:Handoff) ...
-    Orch->>API: Complete Session 1
-    API-->>User: Investigation Completed & Handoff Stored
+    Note over User, DB: SESSION 1: Initial Triage & Investigation (Agent A)
+    User->>API: POST /api/tasks/{task_id}/run (Session 1, Role: Investigator)
+    API->>Orch: execute_task(task_id, Session 1, Agent A)
+    Orch->>Repo: retrieve_memories_for_task(workspace_id, task_id)
+    Repo-->>Orch: 0 prior memories discovered (Cold Start)
+    Orch->>Orch: Agent A executes diagnostic investigation
+    Note over Orch: Finding: Connection pool exhausted (10/10 limit reached under 500 RPS)
+    Orch->>Repo: create_memory(Episodic: "Connection pool exhausted (10/10 limit)")
+    Repo->>DB: Cypher: CREATE (m:Memory) -[:CREATED]-(AgentA), -[:RECORDED]-(Session1)
+    Orch->>Repo: create_handoff("Increase max_connections to 50 in pool config")
+    Repo->>DB: Cypher: CREATE (h:Handoff) -[:HAS_HANDOFF]-(Task)
+    Orch->>API: Mark Session 1 Completed & Record Timeline Event
+    API-->>User: Investigation Completed, Findings & Handoff Stored
 
     Note over User, DB: SESSION 2: Context Recovery & Continuation (Agent B)
-    User->>API: POST /api/tasks/{task_id}/run (Session 2, Continuation)
-    API->>Orch: Execute Task (Role: Continuation)
-    Orch->>Repo: retrieve_memories_for_task(task_id)
-    Repo-->>Orch: Return Session 1 Memory ("Pool limit 10/10 reached")
-    Orch->>Orch: Agent B reads context & executes next action (Pool expanded)
-    Orch->>Repo: create_memory(Semantic: "Pool resized to 50, p99=42ms")
-    Orch->>Repo: link_memory_continuation(NewMem, PriorMem)
-    Repo->>DB: Cypher: (NewMem)-[:RELATES_TO]->(PriorMem)
-    Orch->>API: Complete Session 2 (Task Resolved)
-    API-->>User: Task Successfully Resolved with Graph Provenance
+    User->>API: POST /api/tasks/{task_id}/run (Session 2, Role: Continuation)
+    API->>Orch: execute_task(task_id, Session 2, Agent B)
+    Orch->>Repo: retrieve_memories_for_task(workspace_id, task_id)
+    Repo-->>Orch: Return Session 1 Memory ("Connection pool exhausted (10/10 limit)")
+    Orch->>Orch: Agent B reads Session 1 context & executes next action
+    Note over Orch: Action: Increased pool to 50; under 500 RPS p99 latency dropped to 42ms
+    Orch->>Repo: create_memory(Semantic: "Pool resized to 50, throughput stable")
+    Repo->>DB: Cypher: CREATE (NewMem:Memory)
+    Orch->>Repo: link_memory_continuation(NewMem.id, PriorMem.id)
+    Repo->>DB: Cypher: CREATE (NewMem)-[:RELATES_TO {rel: 'continues_investigation'}]->(PriorMem)
+    Orch->>API: Mark Session 2 Completed & Update Task Status to 'resolved'
+    API-->>User: Task Successfully Resolved with Graph Traceability
 ```
+
+### Operational Lifecycle Breakdown
+
+1. **Task Assignment & Cold Check (Session 1)**: Agent A is assigned task `task-01` in clean session `sess-01`. It queries the repository for historical context; zero memories are found, confirming an initial cold investigation.
+2. **Diagnostic Execution**: Agent A conducts bounded diagnostic analysis, discovering HTTP 504 gateway timeouts caused by connection pool exhaustion under 500 RPS load.
+3. **Episodic Memory Graph Commit**: Agent A stores an `EPISODIC` memory entity linked to author `agent-a-investigator`, session `sess-01`, and task `task-01`.
+4. **Structured Handoff Creation**: Agent A creates an explicit `Handoff` record specifying the target role (`agent-b-continuation`), findings summary, and the concrete next action: *"Increase max_connections to 50 in pool configuration and verify throughput."*
+5. **Session 1 Termination**: Session 1 completes, recording its end timestamp and memory associations. Its in-memory execution process ends.
+6. **Session 2 Initialization**: An independent session `sess-02` begins with Agent B. Agent B has no internal conversational context from Session 1.
+7. **Task-Scoped Graph Recovery**: Agent B executes `retrieve_memories_for_task()` via openCypher, immediately recovering Agent A's findings and next action without re-running diagnostics.
+8. **Continuation & Relationship Linking**: Agent B executes the remediation, verifies latency reduction, saves a `SEMANTIC` memory, and executes `link_memory_continuation()` to create a directional `RELATES_TO` edge in the graph. The task status updates to `resolved`.
 
 ---
 
