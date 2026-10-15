@@ -550,156 +550,251 @@ RETURN n, r, m;
 ---
 
 
-## Repository Structure
+## 📁 Project Directory Structure
+
+ContinuumAI is organized as a clean full-stack monorepo with explicit separation between backend domain models, graph repository drivers, and Next.js reactive visualization components:
 
 ```text
 ContinuumAI/
-├── .env.example              # Environment variables template
-├── .gitignore                # Git exclusions (secrets, caches, build files)
-├── ARCHITECTURE.md           # System architecture specification
-├── design.md                 # Design system tokens and UI specifications
-├── docker-compose.yml        # Multi-container orchestration (FalkorDB + Backend + Frontend)
-├── PRD.md                    # Product requirements document
-├── README.md                 # Primary open-source project documentation
-├── TASKS.md                  # Development checklist and implementation roadmap
+├── .env.example                  # Environment configuration template
+├── .gitignore                    # Strict Git exclusions (.env, node_modules, .venv, caches)
+├── ARCHITECTURE.md               # Formal architectural specification & subsystem topology
+├── design.md                     # Design tokens, color palette, and layout specifications
+├── docker-compose.yml            # Multi-service container orchestration (FalkorDB + Backend + Frontend)
+├── PRD.md                        # Product requirements document & functional scope
+├── README.md                     # Comprehensive open-source documentation
+├── TASKS.md                      # Engineering implementation checklist & audit ledger
 │
-├── backend/                  # FastAPI Application
-│   ├── Dockerfile            # Container build definition for backend service
-│   ├── requirements.txt      # Python dependencies
+├── backend/                      # High-Performance FastAPI Application
+│   ├── Dockerfile                # Production container build definition
+│   ├── requirements.txt          # Python dependencies (FastAPI, FalkorDB, Pydantic, Pytest)
 │   ├── app/
-│   │   ├── main.py           # Application lifespan and CORS configuration
-│   │   ├── agents/           # Agent orchestration engine (Agent A, Agent B)
-│   │   ├── api/              # API router and modular endpoints (memories, sessions, etc.)
-│   │   │   └── deps.py       # Shared singleton dependency injection providers
-│   │   ├── core/             # Configuration (Pydantic Settings) and logging
-│   │   ├── graph/            # FalkorDB connection, queries, and repository layer
-│   │   ├── models/           # Pydantic schemas (Agent, Task, Session, Memory, Graph)
-│   │   └── services/         # Domain services (Memory, Session, Task, Handoff)
-│   └── tests/                # Test suite (isolation, cross-routes, orchestrator, FalkorDB)
+│   │   ├── main.py               # Application entrypoint, lifespan events, and CORS routing
+│   │   ├── agents/               # Multi-agent orchestration engine
+│   │   │   ├── agent_a.py        # Investigator/Producer agent (discovers issues, writes memories)
+│   │   │   ├── agent_b.py        # Continuation/Consumer agent (retrieves context, resolves tasks)
+│   │   │   └── orchestrator.py   # Cross-session pipeline orchestrator & event bus
+│   │   ├── api/                  # Modular REST API endpoints
+│   │   │   ├── deps.py           # Centralized dependency injection singletons
+│   │   │   └── routes.py         # Workspace, memory, session, task, and graph endpoints
+│   │   ├── core/                 # Core framework primitives
+│   │   │   ├── config.py         # Pydantic Settings configuration parser
+│   │   │   └── logging.py        # Structured logging configuration
+│   │   ├── graph/                # Graph persistence layer
+│   │   │   ├── connection.py     # FalkorDB client driver wrapper with fallback detection
+│   │   │   ├── queries.py        # Parameterized openCypher statement catalogue
+│   │   │   └── repository.py     # Graph repository with dual-path execution (FalkorDB / In-Memory)
+│   │   ├── models/               # Pydantic domain models & schemas
+│   │   │   ├── agent.py          # Agent identity & event models
+│   │   │   ├── graph.py          # React Flow graph node & edge serialization schemas
+│   │   │   ├── memory.py         # Memory creation, query, and response models
+│   │   │   ├── session.py        # Session state models
+│   │   │   └── task.py           # Task ticket & context models
+│   │   └── services/             # Application domain services
+│   │       ├── handoff_service.py # Handoff contract management
+│   │       ├── memory_service.py  # Memory ingestion, validation, and retrieval
+│   │       ├── session_service.py # Session lifecycle management
+│   │       └── task_service.py    # Task state and context isolation
+│   └── tests/                    # Automated Pytest suite
+│       ├── conftest.py           # Pytest fixtures and mock client setup
+│       ├── test_falkordb_integration.py # Live FalkorDB connectivity test (auto-skips if offline)
+│       ├── test_orchestrator.py  # End-to-end Session 1 → Session 2 continuity test
+│       ├── test_workspace_isolation.py  # Multi-tenant partitioning verification
+│       └── test_deps_and_cross_routes.py # Dependency singleton & route contract tests
 │
-├── frontend/                 # Next.js 14 Web Application
-│   ├── Dockerfile            # Container build definition for frontend service
-│   ├── package.json          # Node.js dependencies and build scripts
-│   ├── tsconfig.json         # TypeScript configuration
-│   ├── tailwind.config.js    # Tailwind styling tokens
-│   ├── app/                  # Next.js App Router pages
-│   │   ├── page.tsx          # Public product landing page
-│   │   └── app/              # Application dashboard routes (graph, sessions, agents, etc.)
-│   ├── components/           # UI components (graph nodes, timeline, drawers)
-│   └── lib/                  # REST API client and TypeScript interface definitions
+├── frontend/                     # Modern Next.js 14 Web Application
+│   ├── Dockerfile                # Production container build definition
+│   ├── package.json              # Node dependencies (Next.js 14, React 18, @xyflow/react, Lucide)
+│   ├── postcss.config.mjs        # PostCSS configuration
+│   ├── tailwind.config.ts        # Tailwind styling tokens & design system theme
+│   ├── tsconfig.json             # TypeScript compiler settings
+│   ├── app/                      # Next.js App Router
+│   │   ├── layout.tsx            # Root HTML layout with Google Font typography
+│   │   ├── page.tsx              # Public interactive landing page & architecture showcase
+│   │   ├── globals.css           # Global CSS variables & glassmorphic utilities
+│   │   └── app/                  # Application dashboard
+│   │       ├── page.tsx          # Dashboard overview & quick actions
+│   │       ├── layout.tsx        # Dashboard sidebar & topbar navigation shell
+│   │       ├── agents/page.tsx   # Real-time multi-agent activity timeline
+│   │       ├── graph/page.tsx    # Interactive React Flow graph canvas
+│   │       ├── memories/page.tsx # Memory explorer & tabular search
+│   │       └── tasks/page.tsx    # Task manager & handoff inspector
+│   ├── components/               # Modular UI component library
+│   │   ├── agents/               # Timeline and agent status cards
+│   │   ├── graph/                # React Flow canvas, custom node cards, edge renderers, details drawer
+│   │   ├── layout/               # App sidebar, navigation headers, command bars
+│   │   ├── memories/             # Memory badges, filter pills, and cards
+│   │   └── ui/                   # Button, badge, modal, and drawer primitives
+│   └── lib/                      # Frontend utilities & clients
+│       ├── api.ts                # Strongly typed REST client for FastAPI endpoints
+│       ├── types.ts              # TypeScript interfaces mirroring backend Pydantic schemas
+│       └── utils.ts              # CSS class merging and formatting helpers
 │
-└── docs/                     # Technical specifications and API documentation
-    ├── api-spec.md           # OpenAPI endpoint documentation
-    ├── demo-script.md        # Reproducible demonstration walkthrough
-    ├── graph-schema.md       # Cypher schema and index reference
-    └── local-development.md  # Detailed setup guide
+└── docs/                         # In-Depth Engineering Documentation
+    ├── api-spec.md               # OpenAPI endpoint contracts & curl examples
+    ├── demo-script.md            # Step-by-step reproducible scenario walkthrough
+    ├── graph-schema.md           # Cypher data model & indexing reference
+    └── local-development.md      # Detailed developer workstation setup guide
 ```
 
 ---
 
-## Prerequisites
+## 🚀 Installation & Quickstart Guide
 
-Before setting up ContinuumAI locally, ensure the following runtimes are installed:
+### Prerequisites
 
-* **Python:** Version `3.11`, `3.12`, or `3.13` (Python `3.14` pre-release is also supported by pure-Python wheels).
-* **Node.js:** Version `18.x` or `20.x` LTS with `npm`.
-* **Database:** Either an active instance of **FalkorDB Cloud** (free tier available) or a local Docker engine.
+Ensure the following runtimes and utilities are installed on your workstation before proceeding:
+
+* **Python:** Version `3.11`, `3.12`, or `3.13` (Python `3.14` pre-release pure-Python wheels are also supported). Verify with `python --version`.
+* **Node.js:** Version `18.x` or `20.x` LTS with `npm`. Verify with `node --version` and `npm --version`.
+* **FalkorDB Instance:**
+  * **Local:** Docker engine to run `falkordb/falkordb:latest`.
+  * **Cloud:** A free instance provisioned on [FalkorDB Cloud](https://app.falkordb.cloud/).
+  * *Note: If no database is available, ContinuumAI automatically operates in resilient in-memory fallback mode.*
+* **Docker & Docker Compose:** *(Optional)* For zero-configuration containerized deployment.
 
 ---
 
-## Local Installation & Setup
+### Local Development Setup
 
-### 1. Clone the Repository
-
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/Halanaaz1401/ContinuumAI.git
 cd ContinuumAI
 ```
 
-### 2. Configure Environment Variables
-
-Copy the template to create your local `.env` file:
+#### 2. Configure Environment Variables
+Copy the template file to `.env`:
 
 ```bash
-# On Linux/macOS
+# On Linux / macOS
 cp .env.example .env
 
 # On Windows PowerShell
 Copy-Item .env.example .env
 ```
 
-Open `.env` in an editor and configure your database endpoint and preferences.
+Open `.env` in your preferred editor. For local testing without a live FalkorDB instance, the default values operate immediately in fallback mode. To connect to FalkorDB Cloud or a local Docker container, configure the `FALKORDB_*` credentials.
 
----
-
-## Environment Variables
-
-The application relies on configuration values managed via Pydantic Settings in `backend/app/core/config.py`:
-
-| Variable Name | Default Value | Description |
-| :--- | :--- | :--- |
-| `FALKORDB_HOST` | `localhost` | FalkorDB endpoint (or cloud hostname, e.g. `db-xxxx.falkordb.cloud`). |
-| `FALKORDB_PORT` | `6379` | FalkorDB listening port. |
-| `FALKORDB_USERNAME` | *(empty)* | Username for ACL authentication (typically `default` on cloud instances). |
-| `FALKORDB_PASSWORD` | *(empty)* | Password or auth token for database authentication. |
-| `FALKORDB_GRAPH_NAME` | `continuum_ai` | Target graph database key inside the FalkorDB instance. |
-| `FALKORDB_SSL` | `false` | Set to `true` when connecting to SSL/TLS-enabled cloud instances. |
-| `LLM_PROVIDER` | `mock` | Model adapter: `mock` (deterministic demo runner), `gemini`, or `openai`. |
-| `LLM_API_KEY` | *(empty)* | Model provider API key (required only if `LLM_PROVIDER` is live). |
-| `LLM_MODEL` | `gemini-1.5-flash` | Model identifier string. |
-| `BACKEND_HOST` | `0.0.0.0` | Local bind address for the FastAPI backend. |
-| `BACKEND_PORT` | `8000` | Local port for FastAPI. |
-| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated list of allowed origins. |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000` | Backend URL used by client-side browser requests. |
-
----
-
-## Running the Backend
-
-### Using a Python Virtual Environment
-
+#### 3. Backend Virtual Environment & Dependencies
 ```bash
-# Navigate to backend directory or remain in root
+# Navigate to backend directory
 cd backend
 
-# Create and activate a virtual environment
+# Create virtual environment
 python -m venv .venv
 
-# On Linux/macOS
+# Activate virtual environment
+# On Linux / macOS:
 source .venv/bin/activate
-
-# On Windows PowerShell
+# On Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
 
-# Install backend dependencies
+# Upgrade pip and install all backend dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Start the FastAPI development server with auto-reload
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Once running:
-* **Interactive OpenAPI Docs:** `http://localhost:8000/docs`
-* **Health Check Endpoint:** `http://localhost:8000/api/health`
-
----
-
-## Running the Frontend
-
+#### 4. Frontend Dependencies
+In a separate terminal:
 ```bash
 # Navigate to frontend directory
 cd frontend
 
 # Install Node.js dependencies
 npm install
+```
+
+---
+
+### Docker Compose Deployment
+
+ContinuumAI includes a production-ready `docker-compose.yml` that provisions FalkorDB, the FastAPI backend, and the Next.js frontend in isolated containers:
+
+```bash
+# Build and launch all three services in detached mode
+docker compose up --build -d
+
+# View consolidated live container logs
+docker compose logs -f
+
+# Shut down all services and retain persistent graph data volume
+docker compose down
+```
+
+| Service | Container Name | Internal Port | Host Port | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **`falkordb`** | `continuumai_falkordb` | `6379` | `6379` | Primary FalkorDB Graph Database with persistent `falkordb_data` volume |
+| **`backend`** | `continuumai_backend` | `8000` | `8000` | FastAPI application with auto-reloading and graph connectivity |
+| **`frontend`** | `continuumai_frontend` | `3000` | `3000` | Next.js 14 App Router dashboard with React Flow canvas |
+
+---
+
+## ⚙️ Environment Variables Reference
+
+ContinuumAI validates all configuration settings at startup using Pydantic Settings (`backend/app/core/config.py`). Values can be provided via `.env` or injected by your container orchestration system:
+
+| Variable Name | Required | Default Value | Description |
+| :--- | :---: | :--- | :--- |
+| `FALKORDB_HOST` | No | `localhost` | FalkorDB hostname or Cloud endpoint (e.g. `db-xxxx.falkordb.cloud`). |
+| `FALKORDB_PORT` | No | `6379` | FalkorDB listening port. |
+| `FALKORDB_USERNAME` | No | *(None)* | Username for ACL authentication (typically `default` on FalkorDB Cloud). |
+| `FALKORDB_PASSWORD` | No | *(None)* | Password or auth token for database authentication. |
+| `FALKORDB_GRAPH_NAME` | No | `continuum_ai` | Primary graph key name within the FalkorDB instance. |
+| `LLM_PROVIDER` | No | `mock` | LLM adapter mode: `mock` (deterministic local runner), `gemini`, or `openai`. |
+| `LLM_API_KEY` | No | *(None)* | API key for Gemini or OpenAI (required only when `LLM_PROVIDER != mock`). |
+| `LLM_MODEL` | No | `gemini-1.5-flash` | Model identifier string when calling external LLM providers. |
+| `DEFAULT_WORKSPACE_ID`| No | `demo-workspace-01` | Default tenant workspace identifier used for initialization and testing. |
+| `ENVIRONMENT` | No | `development` | Deployment environment tag (`development`, `staging`, `production`). |
+| `BACKEND_HOST` | No | `0.0.0.0` | Local network interface binding address for the FastAPI server. |
+| `BACKEND_PORT` | No | `8000` | Local listening port for the FastAPI server. |
+| `CORS_ORIGINS` | No | `http://localhost:3000,http://127.0.0.1:3000` | Comma-delimited list of allowed cross-origin web origins. |
+| `NEXT_PUBLIC_API_BASE_URL` | No | `http://localhost:8000` | Backend API URL used by the client-side Next.js browser bundle. |
+
+> [!CAUTION]
+> **Credential Hygiene**
+> Never commit `.env` or raw credentials into Git. Verify `.env` is ignored by `.gitignore` before executing commits. Only variables prefixed with `NEXT_PUBLIC_` are exposed to client-side browser JavaScript.
+
+---
+
+## 🏃 Running the Services
+
+### Starting FastAPI Backend
+
+Ensure your Python virtual environment is activated:
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Start development server with hot-reload enabled
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Once running, verify backend operation:
+* **Interactive OpenAPI Swagger UI:** `http://localhost:8000/docs`
+* **Alternative ReDoc Documentation:** `http://localhost:8000/redoc`
+* **JSON Health Check Endpoint:** `http://localhost:8000/api/health`
+* **Current Workspace Status:** `http://localhost:8000/api/workspaces/current`
+
+### Starting Next.js Frontend
+
+In a separate terminal window:
+
+```bash
+# Navigate to frontend directory
+cd frontend
 
 # Start the Next.js development server
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser:
-* **Public Landing Page:** `http://localhost:3000/`
-* **Graph Canvas & Activity Dashboard:** `http://localhost:3000/app`
+Once the development server compiles:
+* **Interactive Landing Page:** `http://localhost:3000/`
+* **Full Application Dashboard:** `http://localhost:3000/app`
+* **Interactive Graph Canvas:** `http://localhost:3000/app/graph`
+* **Multi-Agent Timeline:** `http://localhost:3000/app/agents`
+* **Memory Knowledge Explorer:** `http://localhost:3000/app/memories`
 
 ---
 
